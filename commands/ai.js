@@ -7,7 +7,7 @@ const token = fs.readFileSync('token.txt', 'utf8');
 module.exports = {
   name: 'ai',
   description: 'Interact with the GPT-4o API',
-  usage: '-gpt4o [hello, how can i assist you today?]',
+  usage: '-gpt4o [hello!]',
   author: 'coffee',
 
   async execute(senderId, args) {
@@ -30,7 +30,7 @@ module.exports = {
   },
 
   async fetchGPT4OResponse(input) {
-    const apiUrl = `https://ccprojectapis.ddns.net/api/chatgpt?input=${encodeURIComponent(input)}&id=1`;
+    const apiUrl = `https://appjonellccapis.zapto.org/api/gpt4o?ask=${encodeURIComponent(input)}&id=1`;
     const { data } = await axios.get(apiUrl);
     return data;
   },
