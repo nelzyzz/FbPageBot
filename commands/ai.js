@@ -7,7 +7,7 @@ const token = fs.readFileSync('token.txt', 'utf8');
 module.exports = {
   name: 'ai',
   description: 'Interact with the GPT-4o API',
-  usage: '-gpt4o [your message]',
+  usage: '-gpt4o [hello, how can i assist you today?]',
   author: 'coffee',
 
   async execute(senderId, args) {
