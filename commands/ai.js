@@ -1,36 +1,32 @@
 const axios = require('axios');
 const fs = require('fs');
-
-const { sendMessage, sendError } = require('../handles/messageUtils');
+const { sendMessage } = require('../handles/sendMessage');
 
 const token = fs.readFileSync('token.txt', 'utf8');
 
 module.exports = {
-  name: 'ai',
+  name: 'gpt4o',
   description: 'Interact with the GPT-4o API',
-  usage: '-gpt4o [hello!, how can i assist you today?]',
+  usage: '-gpt4o [your message]',
   author: 'coffee',
 
   async execute(senderId, args) {
     const input = this.parseInput(args);
     if (!input) {
-      return await sendError(senderId, 'Error: Missing input!', token);
+      return await this.sendError(senderId, 'Error: Missing input!');
     }
 
     try {
       const response = await this.fetchGPT4OResponse(input);
-      await sendMessage(senderId, this.formatResponse(response), token);
+      await sendMessage(senderId, { text: this.formatResponse(response) }, token);
     } catch (error) {
       console.error('Error processing input:', error);
-      await sendError(senderId, 'Error: Unexpected error occurred while processing the input.', token);
+      await this.sendError(senderId, 'Error: Unexpected error occurred while processing the input.');
     }
   },
 
   parseInput(args) {
-    if (!Array.isArray(args) || args.length === 0) {
-      return null;
-    }
-    return args.join(' ').trim();
+    return Array.isArray(args) && args.length > 0 ? args.join(' ').trim() : null;
   },
 
   async fetchGPT4OResponse(input) {
@@ -41,8 +37,12 @@ module.exports = {
 
   formatResponse(data) {
     if (data.status) {
-      return `🗨️ | 𝙶𝙿𝚃-4𝚘\n・───────────・\n${data.response || 'This is an example response.'}\n・──── >ᴗ< ────・`;
+      return `🗨️ | 𝙶𝙿𝚃-4𝚘\n・───────────・\n${data.response || 'No response provided.'}\n・──── >ᴗ< ────・`;
     }
     return 'Error: Unable to fetch response.';
   },
+
+  async sendError(senderId, errorMessage) {
+    await sendMessage(senderId, { text: errorMessage }, token);
+  }
 };
