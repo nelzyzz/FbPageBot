@@ -21,7 +21,7 @@ module.exports = {
       const text = response.data.gpt4;
 
       // Send the generated text to the user
-      sendMessage(senderId, { text: "GPT4 BY CHATGPT:\n\n" + text }, pageAccessToken);
+      sendMessage(senderId, { text: "CHATBOT BY NELZY:\n\n" + text }, pageAccessToken);
     } catch (error) {
       console.error('Error calling GPT-4 API:', error);
       sendMessage(senderId, { text: 'There was an error generating the content. Please try again later.' }, pageAccessToken);
