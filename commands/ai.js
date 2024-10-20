@@ -7,7 +7,7 @@ module.exports = {
     author: "Coffee",
 };
 
-async execute('senderId, args, pageAccesToken, sendMessage') {
+async execute(senderId, args, pageAccesToken, sendMessage) {
     const prompt = args.join(" ") || "hi";
     const userId = message.senderID; // Get user ID from message
 
