@@ -7,7 +7,7 @@ module.exports = {
     author: "Coffee",
 
     async execute(message, senderId, args, pageAccessToken, sendMessage) {
-        const prompt = args.join(" ") || "hi"; // Use 'prompt' variable instead of 'query'
+        const prompt = args.join(" ") || "hi"; 
         const header = "(⁠◍⁠•⁠ᴗ⁠•⁠◍⁠) | 𝙼𝚘𝚌𝚑𝚊 𝙰𝚒\n・──────────────・";
         const footer = "・───── >ᴗ< ──────・";
 
@@ -21,14 +21,15 @@ module.exports = {
                 const { vision } = response.data;
 
                 if (vision) {
-                    return await message.reply(`${header}\n${vision}\n${footer}`);
+                    await message.reply(`${header}\n${vision}\n${footer}`);
                 } else {
-                    return await message.reply(`${header}\nFailed to recognize the image.\n${footer}`);
+                    await message.reply(`${header}\nFailed to recognize the image.\n${footer}`);
                 }
             } catch (error) {
                 console.error("Error fetching image recognition:", error);
-                return await message.reply(`${header}\nAn error occurred while processing the image.\n${footer}`);
+                await message.reply(`${header}\nAn error occurred while processing the image.\n${footer}`);
             }
+            return; // Exit after processing image
         }
 
         // Handle text queries using the GPT-4 API
