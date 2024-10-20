@@ -6,9 +6,9 @@ module.exports = {
     description: "Interact with the GPT-4 API or analyze images",
     author: "Coffee",
 
-    async execute(message, senderId, args, pageAccessToken, sendMessage) {
+    async execute(message, senderId, args) {
         const prompt = args.join(" ") || "hi"; 
-        const header = "(⁠◍⁠•⁠ᴗ⁠•⁠◍⁠) | 𝙼𝚘𝚌𝚑𝚊 𝙰𝚒\n・──────────────・";
+        const header = "(⁠◍⁠•⁠ᴗ⁠•⁠◍⁠) | 𝙼𝚘𝚌𝚊 𝙰𝚒\n・──────────────・";
         const footer = "・───── >ᴗ< ──────・";
 
         // Check for image attachments in the original message
