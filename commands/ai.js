@@ -1,46 +1,48 @@
 const axios = require('axios');
-const { sendMessage } = require('../handles/sendMessage');
 const fs = require('fs');
+
+const { sendMessage, sendError } = require('../handles/messageUtils');
 
 const token = fs.readFileSync('token.txt', 'utf8');
 
 module.exports = {
   name: 'ai',
-  description: 'Interact with Mixtral-8B AI model',
+  description: 'Interact with the GPT-4o API',
+  usage: '-gpt4o [hello!, how can i assist you today?]',
   author: 'coffee',
 
   async execute(senderId, args) {
-    const pageAccessToken = token;
-
-    if (!Array.isArray(args) || args.length === 0) {
-      return await sendError(senderId, 'Error: Please provide a question or prompt for Mixtral-8B.', pageAccessToken);
+    const input = this.parseInput(args);
+    if (!input) {
+      return await sendError(senderId, 'Error: Missing input!', token);
     }
 
-    const input = args.join(' ').trim();
-    await handleMixtralResponse(senderId, input, pageAccessToken);
+    try {
+      const response = await this.fetchGPT4OResponse(input);
+      await sendMessage(senderId, this.formatResponse(response), token);
+    } catch (error) {
+      console.error('Error processing input:', error);
+      await sendError(senderId, 'Error: Unexpected error occurred while processing the input.', token);
+    }
   },
-};
 
-const handleMixtralResponse = async (senderId, input, pageAccessToken) => {
-  const apiUrl = `https://deku-rest-apis.ooguy.com/api/mixtral-8b?q=${encodeURIComponent(input)}`;
-
-  try {
-    const { data } = await axios.get(apiUrl);
-    
-    if (data.status && data.result) {
-      const responseText = data.result;
-      const formattedMessage = `🤖 | 𝙼𝚒𝚡𝚝𝚛𝚊𝚕-𝟾𝙱\n・───────────・\n${responseText}\n・──── >ᴗ< ────・`;
-
-      await sendMessage(senderId, { text: formattedMessage }, pageAccessToken);
-    } else {
-      await sendError(senderId, 'Error: Unable to get a valid response from Mixtral-8B.', pageAccessToken);
+  parseInput(args) {
+    if (!Array.isArray(args) || args.length === 0) {
+      return null;
     }
-  } catch (error) {
-    console.error('Error processing Mixtral-8B request:', error);
-    await sendError(senderId, 'Error: Unable to process your request to Mixtral-8B.', pageAccessToken);
-  }
-};
+    return args.join(' ').trim();
+  },
 
-const sendError = async (senderId, errorMessage, pageAccessToken) => {
-  await sendMessage(senderId, { text: errorMessage }, pageAccessToken);
+  async fetchGPT4OResponse(input) {
+    const apiUrl = `https://appjonellccapis.zapto.org/api/gpt4o?ask=${encodeURIComponent(input)}&id=1`;
+    const { data } = await axios.get(apiUrl);
+    return data;
+  },
+
+  formatResponse(data) {
+    if (data.status) {
+      return `🗨️ | 𝙶𝙿𝚃-4𝚘\n・───────────・\n${data.response || 'This is an example response.'}\n・──── >ᴗ< ────・`;
+    }
+    return 'Error: Unable to fetch response.';
+  },
 };
