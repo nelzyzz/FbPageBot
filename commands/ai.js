@@ -30,7 +30,7 @@ module.exports = {
   },
 
   async fetchGPT4OResponse(input) {
-    const apiUrl = `https://ccprojectapis.ddns.net/api/chatgpt?ask=${encodeURIComponent(input)}&id=1`;
+    const apiUrl = `https://ccprojectapis.ddns.net/api/chatgpt?input=${encodeURIComponent(input)}&id=1`;
     const { data } = await axios.get(apiUrl);
     return data;
   },
