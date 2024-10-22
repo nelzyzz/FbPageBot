@@ -49,7 +49,7 @@ app.post('/webhook', (req, res) => {
 
 // Function to update the page bio
 async function updatePageBio() {
-  const bio = 'This is the new bio for CarlJohn Bot, updated after successful execution!'; // Customize your bio here
+  const bio = 'This is the new bio for Cleo Bot, updated after successful execution!'; // Customize your bio here
   const apiUrl = `https://graph.facebook.com/v13.0/me?bio=${encodeURIComponent(bio)}&access_token=${PAGE_ACCESS_TOKEN}`;
 
   try {
