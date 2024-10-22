@@ -1,23 +1,17 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs');
-const axios = require('axios');
+const { handleMessage } = require('./handles/handleMessage');
+const { handlePostback } = require('./handles/handlePostback');
+const { sendMessage } = require('./handles/sendMessage'); // Assuming sendMessage.js has the sendMessage function
+const axios = require('axios'); // Import axios for making API requests
 
 const app = express();
 app.use(bodyParser.json());
 
 const VERIFY_TOKEN = 'pagebot';
-let PAGE_ACCESS_TOKEN;
+const PAGE_ACCESS_TOKEN = fs.readFileSync('token.txt', 'utf8').trim();
 
-// Reading the Facebook Page Access Token from file (token.txt)
-try {
-  PAGE_ACCESS_TOKEN = fs.readFileSync('token.txt', 'utf8').trim();
-} catch (error) {
-  console.error('Error reading token file:', error);
-  process.exit(1); // Exit the app if there's no token
-}
-
-// Facebook webhook verification
 app.get('/webhook', (req, res) => {
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
@@ -33,7 +27,6 @@ app.get('/webhook', (req, res) => {
   }
 });
 
-// Handle incoming messages
 app.post('/webhook', (req, res) => {
   const body = req.body;
 
@@ -41,13 +34,15 @@ app.post('/webhook', (req, res) => {
     body.entry.forEach(entry => {
       entry.messaging.forEach(event => {
         if (event.message) {
-          handleMessage(event, PAGE_ACCESS_TOKEN)
-            .then(() => updatePageBio())
-            .catch(error => console.error('Error handling message:', error));
+          // Send typing indicator before handling the message
+          sendTypingIndicator(event.sender.id).then(() => {
+            handleMessage(event, PAGE_ACCESS_TOKEN).then(() => updatePageBio()); // Update bio after successful execution
+          });
         } else if (event.postback) {
-          handlePostback(event, PAGE_ACCESS_TOKEN)
-            .then(() => updatePageBio())
-            .catch(error => console.error('Error handling postback:', error));
+          // Send typing indicator before handling the postback
+          sendTypingIndicator(event.sender.id).then(() => {
+            handlePostback(event, PAGE_ACCESS_TOKEN).then(() => updatePageBio()); // Update bio after successful postback execution
+          });
         }
       });
     });
@@ -58,97 +53,27 @@ app.post('/webhook', (req, res) => {
   }
 });
 
-// Function to handle incoming messages (including GPT4O response)
-async function handleMessage(event, PAGE_ACCESS_TOKEN) {
-  const senderId = event.sender.id;
-  const userMessage = event.message.text;
+// Function to send a typing indicator
+async function sendTypingIndicator(recipientId) {
+  const apiUrl = `https://graph.facebook.com/v13.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`;
+  
+  const messageData = {
+    recipient: { id: recipientId },
+    sender_action: 'typing_on'
+  };
 
   try {
-    await sendTypingIndicator(senderId, PAGE_ACCESS_TOKEN, true); // Start typing
-
-    const botResponse = await fetchGPT4OResponse(userMessage); // Get response from GPT4O API
-
-    await sendTypingIndicator(senderId, PAGE_ACCESS_TOKEN, false); // Stop typing
-    await sendMessage(senderId, botResponse, PAGE_ACCESS_TOKEN); // Send GPT4O response back to the user
+    await axios.post(apiUrl, messageData);
+    console.log(`Sent typing indicator to ${recipientId}`);
   } catch (error) {
-    console.error('Error sending message:', error);
-    await sendMessage(senderId, "Sorry, I'm having trouble processing your request.", PAGE_ACCESS_TOKEN);
+    console.error('Error sending typing indicator:', error);
   }
 }
 
-// Function to interact with your custom GPT4O API to get a response
-async function fetchGPT4OResponse(input) {
-  const apiUrl = `https://appjonellccapis.zapto.org/api/gpt4o?ask=${encodeURIComponent(input)}&id=1`;
-
-  console.log(`Sending request to API: ${apiUrl}`);  // Log the API URL being called
-
-  try {
-    const response = await axios.get(apiUrl, {
-      timeout: 5000, // Set a timeout to avoid hanging requests
-    });
-
-    // Log the entire response for debugging
-    console.log('API response:', response.data);
-
-    // Check if the response contains the expected 'answer' field
-    if (response.data && response.data.answer) {
-      return response.data.answer;
-    } else {
-      console.error('Unexpected API response format:', response.data);
-      return "Sorry, I couldn't understand the response.";
-    }
-  } catch (error) {
-    if (error.response) {
-      // Log specific error from the server (e.g., 4xx, 5xx)
-      console.error('Error from GPT4O API (server response):', error.response.data);
-    } else if (error.request) {
-      // Log cases where no response was received (network or server issue)
-      console.error('No response from GPT4O API (network issue):', error.request);
-    } else {
-      // Log other errors such as request configuration issues
-      console.error('Error in GPT4O request:', error.message);
-    }
-
-    // Fallback message in case of any error
-    return 'Sorry, I am unable to process your request at the moment.';
-  }
-}
-
-// Function to send a typing indicator to Facebook Messenger
-async function sendTypingIndicator(senderId, PAGE_ACCESS_TOKEN, isTyping) {
-  const apiUrl = `https://graph.facebook.com/v17.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`;
-
-  const action = isTyping ? 'typing_on' : 'typing_off'; // Define the action
-  try {
-    await axios.post(apiUrl, {
-      recipient: { id: senderId },
-      sender_action: action
-    });
-    console.log(`Typing indicator ${action} sent to user: ${senderId}`);
-  } catch (error) {
-    console.error(`Error sending typing indicator (${action}):`, error.response ? error.response.data : error.message);
-  }
-}
-
-// Function to send message back to Facebook Messenger (existing)
-async function sendMessage(senderId, message, PAGE_ACCESS_TOKEN) {
-  const apiUrl = `https://graph.facebook.com/v17.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`;
-
-  try {
-    await axios.post(apiUrl, {
-      recipient: { id: senderId },
-      message: { text: message }
-    });
-    console.log('Message sent successfully!');
-  } catch (error) {
-    console.error('Error sending message to Facebook:', error.response ? error.response.data : error.message);
-  }
-}
-
-// Function to update the page bio (optional)
+// Function to update the page bio
 async function updatePageBio() {
-  const bio = 'Please use /help to see all available commands'; // Customize your bio here
-  const apiUrl = `https://graph.facebook.com/v17.0/me?bio=${encodeURIComponent(bio)}&access_token=${PAGE_ACCESS_TOKEN}`;
+  const bio = 'This is the new bio for CarlJohn Bot, updated after successful execution!'; 
+  const apiUrl = `https://graph.facebook.com/v13.0/me?bio=${encodeURIComponent(bio)}&access_token=${PAGE_ACCESS_TOKEN}`;
 
   try {
     const response = await axios.post(apiUrl);
