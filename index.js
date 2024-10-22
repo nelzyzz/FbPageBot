@@ -72,6 +72,7 @@ async function handleMessage(event, PAGE_ACCESS_TOKEN) {
     await sendMessage(senderId, botResponse, PAGE_ACCESS_TOKEN); // Send GPT4O response back to the user
   } catch (error) {
     console.error('Error sending message:', error);
+    await sendMessage(senderId, "Sorry, I'm having trouble processing your request.", PAGE_ACCESS_TOKEN);
   }
 }
 
@@ -80,10 +81,28 @@ async function fetchGPT4OResponse(input) {
   const apiUrl = `https://appjonellccapis.zapto.org/api/gpt4o?ask=${encodeURIComponent(input)}&id=1`;
 
   try {
-    const response = await axios.get(apiUrl);
-    return response.data.answer; // Assuming the API returns the answer in a field called 'answer'
+    const response = await axios.get(apiUrl, {
+      timeout: 5000, // Set a timeout to avoid hanging requests
+    });
+
+    // Check if the response format is as expected
+    if (response.data && response.data.answer) {
+      return response.data.answer;
+    } else {
+      console.error('Unexpected API response format:', response.data);
+      return "Sorry, I couldn't understand the response.";
+    }
   } catch (error) {
-    console.error('Error from GPT4O API:', error.response ? error.response.data : error.message);
+    if (error.response) {
+      // Handle responses from the server (e.g., 4xx, 5xx errors)
+      console.error('Error from GPT4O API:', error.response.data);
+    } else if (error.request) {
+      // Handle no response from the server (e.g., timeout)
+      console.error('No response from GPT4O API:', error.request);
+    } else {
+      // Other errors
+      console.error('Error in GPT4O request:', error.message);
+    }
     return 'Sorry, I am unable to process your request at the moment.';
   }
 }
