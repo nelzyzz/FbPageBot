@@ -26,7 +26,7 @@ async function handleMessage(event, pageAccessToken) {
   // Check if the message starts with the prefix
   if (!messageText.startsWith(prefix)) {
     // Call the sim feature if there's no prefix
-    await callSimAPI(senderId, messageText, pageAccessToken);
+    await GPT4O(senderId, messageText, pageAccessToken);
     return;
   }
 
