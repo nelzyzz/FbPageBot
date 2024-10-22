@@ -34,9 +34,15 @@ app.post('/webhook', (req, res) => {
     body.entry.forEach(entry => {
       entry.messaging.forEach(event => {
         if (event.message) {
-          handleMessage(event, PAGE_ACCESS_TOKEN).then(() => updatePageBio()); // Update bio after successful execution
+          // Send typing indicator before handling the message
+          sendTypingIndicator(event.sender.id).then(() => {
+            handleMessage(event, PAGE_ACCESS_TOKEN).then(() => updatePageBio()); // Update bio after successful execution
+          });
         } else if (event.postback) {
-          handlePostback(event, PAGE_ACCESS_TOKEN).then(() => updatePageBio()); // Update bio after successful postback execution
+          // Send typing indicator before handling the postback
+          sendTypingIndicator(event.sender.id).then(() => {
+            handlePostback(event, PAGE_ACCESS_TOKEN).then(() => updatePageBio()); // Update bio after successful postback execution
+          });
         }
       });
     });
@@ -47,9 +53,26 @@ app.post('/webhook', (req, res) => {
   }
 });
 
+// Function to send a typing indicator
+async function sendTypingIndicator(recipientId) {
+  const apiUrl = `https://graph.facebook.com/v13.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`;
+  
+  const messageData = {
+    recipient: { id: recipientId },
+    sender_action: 'typing_on'
+  };
+
+  try {
+    await axios.post(apiUrl, messageData);
+    console.log(`Sent typing indicator to ${recipientId}`);
+  } catch (error) {
+    console.error('Error sending typing indicator:', error);
+  }
+}
+
 // Function to update the page bio
 async function updatePageBio() {
-  const bio = 'This is the new bio for CarlJohn Bot, updated after successful execution!'; // Customize your bio here
+  const bio = 'This is the new bio for CarlJohn Bot, updated after successful execution!'; 
   const apiUrl = `https://graph.facebook.com/v13.0/me?bio=${encodeURIComponent(bio)}&access_token=${PAGE_ACCESS_TOKEN}`;
 
   try {
