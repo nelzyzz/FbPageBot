@@ -4,7 +4,7 @@ const { sendMessage } = require('./sendMessage');
 const axios = require('axios');
 
 const commands = new Map();
-const prefix = '/';
+const prefix = '';
 
 // Load command files
 const commandFiles = fs.readdirSync(path.join(__dirname, '../commands')).filter(file => file.endsWith('.js'));
@@ -36,7 +36,7 @@ async function handleMessage(event, pageAccessToken) {
 
   // Check if the user just sent the prefix "/"
   if (commandName === '') {
-    sendMessage(senderId, { text: 'Invalid command. Please provide a valid command.' }, pageAccessToken);
+    sendMessage(senderId, { text: 'Invalid command. Please provide a valid command.\n\n type help to see all available command' }, pageAccessToken);
     return;
   }
 
@@ -50,14 +50,14 @@ async function handleMessage(event, pageAccessToken) {
       sendMessage(senderId, { text: 'There was an error executing that command.' }, pageAccessToken);
     }
   } else {
-    sendMessage(senderId, { text: `The command "${commandName}" is not available. Please use a valid command.` }, pageAccessToken);
+    sendMessage(senderId, { text: `The command "${commandName}" is not available. Please use a valid command.\n\n type help to see all available command` }, pageAccessToken);
   }
 }
 
 // Function to call the Sim API
 async function callSimAPI(senderId, messageText, pageAccessToken) {
   const APIKEY = 'nsh-9c511a1676801419a3e805751e7a35b2';
-  const apiUrl = `https://sim.up.railway.app/nash?prompt=${encodeURIComponent(messageText)}&apiKey=${APIKEY}`;
+  const apiUrl = `https://ccprojectapis.ddns.net/api/gen?ask=${encodeURIComponent(messageText)}&apiKey=${APIKEY}`;
 
   try {
     const response = await axios.get(apiUrl);
