@@ -55,19 +55,17 @@ async function handleMessage(event, pageAccessToken) {
 }
 
 // Function to call the Sim API
-async function callSimAPI(senderId, messageText, pageAccessToken) {
-  const APIKEY = 'nsh-9c511a1676801419a3e805751e7a35b2';
-  const apiUrl = `https://ccprojectapis.ddns.net/api/gen?ask=${encodeURIComponent(messageText)}&apiKey=${APIKEY}`;
-
+async function GPT4O(senderId, messageText, pageAccessToken) {
+  const apiUrl = `https://appjonellccapis.zapto.org/api/gpt4o?ask=${encodeURIComponent(input)}&id=1`;
+  
   try {
     const response = await axios.get(apiUrl);
-    const simResponse = response.data.response;
 
-    // Send the response from Sim back to the user
-    sendMessage(senderId, { text: simResponse }, pageAccessToken);
+    // Send the response from gpt4o back to the user
+    sendMessage(senderId, { text: response }, pageAccessToken);
   } catch (error) {
-    console.error('Error calling Sim API:', error);
-    sendMessage(senderId, { text: 'There was an error communicating with Sim. Please try again later.' }, pageAccessToken);
+    console.error('Error calling Gpt4o API:', error);
+    sendMessage(senderId, { text: 'There was an error communicating with Gpt4o, Please try again later.' }, pageAccessToken);
   }
 }
 
